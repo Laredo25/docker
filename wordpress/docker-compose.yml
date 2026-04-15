@@ -1,62 +1,30 @@
+version: '3.3'
+
 services:
-  db:
-    # We use a mariadb image which supports both amd64 & arm64 architecture
-    image: mariadb:10.6.4-focal
-    # If you really want to use MySQL, uncomment the following line
-    #image: mysql:8.0.27
-    command: '--default-authentication-plugin=mysql_native_password'
-    volumes:
-      - db_data:/var/lib/mysql
-    restart: always
-    environment:
-      - MYSQL_ROOT_PASSWORD=somewordpress
-      - MYSQL_DATABASE=wordpress
-      - MYSQL_USER=wordpress
-      - MYSQL_PASSWORD=wordpress
-    expose:
-      - 3306
-      - 33060
   wordpress:
     image: wordpress:latest
-    volumes:
-      - wp_data:/var/www/html
+    container_name: Wordpress_Website 
+    restart: always
     ports:
-      - 80:80
+      - "$WORDPRESS_HOST_PORT:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: $WORDPRESS_DB_USER
+      WORDPRESS_DB_PASSWORD: $WORDPRESS_DB_PASSWORD
+      WORDPRESS_DB_NAME: $WORDPRESS_DB_NAME
+    volumes:
+      - $WORDPRESS_DATA:/var/www/html
+    depends_on:
+      - db
+
+  db:
+    image: mariadb:latest
+    container_name: Wordpress_DataBase
     restart: always
     environment:
-      - WORDPRESS_DB_HOST=db
-      - WORDPRESS_DB_USER=wordpress
-      - WORDPRESS_DB_PASSWORD=wordpress
-      - WORDPRESS_DB_NAME=wordpress
-volumes:
-  db_data:
-  wp_data:
-Notes:
-
-The docker volumes db_data and wordpress_data persists updates made by WordPress to the database, as well as the installed themes and plugins. Learn more about docker volumes
-WordPress Multisite works only on ports 80 and 443. {: .note-vanilla}
-Build the project
-Now, run docker compose up -d from your project directory.
-
-This runs docker compose up in detached mode, pulls the needed Docker images, and starts the wordpress and database containers, as shown in the example below.
-
-$ docker compose up -d
-
-Creating network "my_wordpress_default" with the default driver
-Pulling db (mysql:5.7)...
-5.7: Pulling from library/mysql
-efd26ecc9548: Pull complete
-a3ed95caeb02: Pull complete
-<...>
-Digest: sha256:34a0aca88e85f2efa5edff1cea77cf5d3147ad93545dbec99cfe705b03c520de
-Status: Downloaded newer image for mysql:5.7
-Pulling wordpress (wordpress:latest)...
-latest: Pulling from library/wordpress
-efd26ecc9548: Already exists
-a3ed95caeb02: Pull complete
-589a9d9a7c64: Pull complete
-<...>
-Digest: sha256:ed28506ae44d5def89075fd5c01456610cd6c64006addfe5210b8c675881aff6
-Status: Downloaded newer image for wordpress:latest
-Creating my_wordpress_db_1
-Creating my_wordpress_wordpress_1
+      MYSQL_DATABASE: $WORDPRESS_DB_NAME
+      MYSQL_USER: $WORDPRESS_DB_USER
+      MYSQL_PASSWORD: $WORDPRESS_DB_PASSWORD
+      MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
+    volumes:
+      - $DB_DATA:/var/lib/mysql
