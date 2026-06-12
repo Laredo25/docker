@@ -1,0 +1,13 @@
+services:
+  whoami:
+    image: traefik/whoami:latest
+    container_name: whoami_gh
+    restart: unless-stopped
+    networks:
+      - traefik
+
+networks:
+  traefik:
+    external: true
+  backend:
+    internal: true
