@@ -6,11 +6,9 @@ services:
     networks:
       - traefik
     labels:
-      # Enable Traefik for this service
       - "traefik.enable=true"
-      # Define the route rule
       - "traefik.http.routers.whoami.rule=Host(`test.oberhofer.work`)"
-      # Specify the port the service runs on
+      - "traefik.http.routers.httpd.entrypoints=websecure"
       - "traefik.http.services.whoami.loadbalancer.server.port=80"
         
 networks:
