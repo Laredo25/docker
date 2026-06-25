@@ -1,1 +1,60 @@
+version: '3.8'
 
+services:
+  # Database service
+  db:
+    image: postgres:14-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=Kennwort123!
+      - POSTGRES_USER=dmarq_user
+      - POSTGRES_DB=dmarq_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dmarq_user -d dmarq_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dmarq-network
+    ports:
+      - "5433:5432"  # Map to non-standard port to avoid conflicts
+
+  # Integrated backend with frontend service
+  app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - app_data:/app/data      # persist SQLite database and other application data
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - SERVICE_FQDN_APP_8080
+      - DATABASE_URL=postgresql://dmarq_user:Kennwort123!@db:5432/dmarq_db
+      - SECRET_KEY=Kennwort123!
+      - DEBUG=True
+      - ENVIRONMENT=development
+      - DELETE_IMPORTED_EMAILS=false
+      # Add NODE_ENV for Tailwind
+      - NODE_ENV=production
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dmarq.rule=Host(`dmarq.oberhofer.work`)"
+      - "traefik.http.routers.dmarq.entrypoints=websecure"
+      - "traefik.http.services.dmarq.loadbalancer.server.port=80"
+
+# Define networks
+networks:
+  traefik:
+    external: true
+
+# Define volumes
+volumes:
+  postgres_data:
+    driver: local
+  app_data:
+    driver: local
